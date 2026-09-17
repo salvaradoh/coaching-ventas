@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrenamiento de Ventas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --card-inner: #f7f9fc;
+      --border: #e2e8f0;
+      --text: #1e2534;
+      --text-muted: #647089;
+      --accent: #4c6fff;
+      --accent-dark: #2f4fdb;
+      --danger: #d64545;
+      --danger-bg: #fdecec;
+      --ok: #1e9e6b;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #12141c;
+        --card: #1b1e29;
+        --card-inner: #232733;
+        --border: #313747;
+        --text: #eef1f8;
+        --text-muted: #9aa3b8;
+        --accent: #7d95ff;
+        --accent-dark: #93a7ff;
+        --danger: #ff8080;
+        --danger-bg: #3a1f22;
+        --ok: #57d19b;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      margin: 0;
+    }
+    .num { font-variant-numeric: tabular-nums; }
+    .balance { text-wrap: balance; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 8px 24px -12px rgba(15, 23, 42, .12);
+      padding: 20px;
+    }
+    .card-inner {
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .pill {
+      border-radius: 9999px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    select, input, textarea {
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 14px;
+      width: 100%;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    select:focus, input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(76, 111, 255, .18);
+    }
+
+    /* Nunca sacamos el anillo de foco por teclado (prioridad 1 de ui-ux-pro-max). */
+    a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    button { font-family: inherit; }
+    .btn {
+      border-radius: 14px;
+      font-weight: 600;
+      transition: transform .12s ease-out, box-shadow .15s ease, background-color .15s ease, opacity .15s ease;
+    }
+    .btn:active:not(:disabled) { transform: scale(0.96); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 6px 18px -8px rgba(76, 111, 255, .55);
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-dark); }
+
+    .btn-secondary {
+      background: var(--card-inner);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover:not(:disabled) { background: var(--border); }
+
+    .btn-danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid transparent;
+    }
+    .btn-danger:hover:not(:disabled) { filter: brightness(0.97); }
+
+    .dificultad-opcion {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: border-color .15s ease, background-color .15s ease;
+    }
+    .dificultad-opcion:has(input:checked) {
+      border-color: var(--accent);
+      background: rgba(76, 111, 255, .08);
+    }
+    .dificultad-opcion input { width: auto; accent-color: var(--accent); }
+
+    .tabla-escenarios {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .tabla-encabezado, .escenario-tarjeta {
+      display: grid;
+      grid-template-columns: 1fr 74px auto;
+      align-items: center;
+      gap: 12px;
+    }
+    .tabla-encabezado {
+      padding: 7px 12px;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--text-muted);
+      background: var(--card-inner);
+      border-bottom: 1px solid var(--border);
+    }
+    .tabla-encabezado span:last-child, .escenario-tarjeta .escenario-meta { justify-self: end; }
+    .tabla-encabezado span:nth-child(2), .escenario-tarjeta .barras-dificultad { justify-self: center; }
+
+    .escenario-tarjeta {
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: background-color .15s ease;
+      border-bottom: 1px solid var(--border);
+    }
+    .escenario-tarjeta:last-child { border-bottom: none; }
+    .escenario-tarjeta:has(input:checked) { background: rgba(76, 111, 255, .10); }
+    .escenario-tarjeta:hover { background: var(--card-inner); }
+    .escenario-tarjeta input {
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+    }
+    .escenario-tarjeta:has(input:focus-visible) {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+    .escenario-nombre {
+      font-size: 12.5px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .escenario-tarjeta:has(input:checked) .escenario-nombre { color: var(--accent); }
+
+    .barras-dificultad {
+      display: inline-flex;
+      gap: 2px;
+      align-items: center;
+    }
+    .barras-dificultad span {
+      width: 4px;
+      height: 11px;
+      border-radius: 1.5px;
+      background: var(--border);
+    }
+    .barras-dificultad span.llena { background: var(--accent); }
+
+    .badge-llamada {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      border-radius: 9999px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge-agendada { background: rgba(30, 158, 107, .14); color: var(--ok); }
+    .badge-frio { background: rgba(214, 145, 69, .16); color: #d69144; }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .badge-frio { color: #f0ad5e; }
+    }
+
+    .escenario-meta { display: contents; }
+
+    .estado-hablando {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+    }
+    .punto {
+      width: 9px;
+      height: 9px;
+      border-radius: 9999px;
+      flex: none;
+    }
+    .punto-cliente { background: var(--accent); }
+    .punto-ejecutivo { background: var(--ok); }
+    .punto-pulso { animation: pulso 1.4s ease-in-out infinite; }
+    @keyframes pulso {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .55; transform: scale(.85); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .punto-pulso { animation: none; }
+    }
+
+    .cronometro {
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .pantalla {
+      transition: opacity .18s ease;
+    }
+    .oculto { display: none !important; }
+
+    .skeleton {
+      background: linear-gradient(90deg, var(--card-inner) 25%, var(--border) 37%, var(--card-inner) 63%);
+      background-size: 400% 100%;
+      animation: skeleton-loading 1.4s ease infinite;
+      border-radius: 10px;
+    }
+    @keyframes skeleton-loading { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
+    .criterio-barra {
+      background: var(--border);
+      border-radius: 9999px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .criterio-barra > span {
+      display: block;
+      height: 100%;
+      background: var(--accent);
+      border-radius: 9999px;
+      transition: width .4s ease;
+    }
+
+    .aviso-error {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid rgba(214, 69, 69, .25);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 13px;
+    }
+
+    .btn-google {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .btn-google svg { flex: none; }
+
+    #pantalla-login {
+      animation: entrada-login .4s ease-out both;
+    }
+    @keyframes entrada-login {
+      from { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+      to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #pantalla-login { animation: none; }
+    }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="max-w-xl mx-auto px-4 py-8">
+
+    <header class="mb-6">
+      <h1 class="text-xl font-extrabold balance">Entrenamiento de Ventas</h1>
+      <p class="text-sm mt-1" style="color:var(--text-muted)">
+        Practicá una llamada comercial con un cliente simulado por IA.
+      </p>
+    </header>
+
+    <!-- ============================================================ -->
+    <!-- PANTALLA 0: LOGIN CON GOOGLE                                   -->
+    <!-- ============================================================ -->
+    <section id="pantalla-login" class="pantalla card oculto space-y-6 text-center">
+      <img
+        src="https://estudios.apprecio.com/hubfs/logos/Apprecio-logo-rojo.png"
+        alt="Apprecio"
+        style="height:36px; margin:0 auto; display:block;">
+
+      <div>
+        <h2 class="text-base font-bold mb-1">Entrená tus llamadas de venta</h2>
+        <p class="text-sm" style="color:var(--text-muted)">
+          Practicá una llamada de venta con un cliente simulado por IA y recibí feedback al instante.
+        </p>
+      </div>
+
+      <button
+        id="btn-google-login"
+        type="button"
+        class="btn btn-secondary btn-google w-full py-3.5 text-base"
+        aria-label="Continuar con Google">
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+          <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
+          <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+          <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.826.957 4.039l3.007-2.332z"/>
+          <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
+        </svg>
+        <span id="texto-btn-google">Continuar con Google</span>
+      </button>
+
+      <p id="error-login" class="aviso-error oculto" role="alert" aria-live="assertive"></p>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- PANTALLA 1: SELECCIÓN                                          -->
+    <!-- ============================================================ -->
+    <section id="pantalla-seleccion" class="pantalla card oculto">
+
+      <div id="cargando-inicial" class="space-y-3">
+        <div class="skeleton h-5 w-2/3"></div>
+        <div class="skeleton h-10 w-full"></div>
+        <div class="skeleton h-10 w-full"></div>
+        <div class="skeleton h-12 w-full"></div>
+      </div>
+
+      <div id="contenido-seleccion" class="oculto space-y-5">
+
+        <div id="aviso-cuota" class="aviso-error oculto" role="alert" aria-live="assertive"></div>
+
+        <div class="flex items-center justify-between">
+          <span class="text-sm" style="color:var(--text-muted)">Minutos disponibles hoy</span>
+          <span id="minutos-restantes" class="num font-bold text-lg">—</span>
+        </div>
+
+        <div>
+          <span class="block text-sm font-semibold mb-2">Escenario</span>
+          <div class="tabla-escenarios">
+            <div class="tabla-encabezado" aria-hidden="true">
+              <span>Escenario</span>
+              <span>Dificultad</span>
+              <span>Tipo</span>
+            </div>
+            <div id="lista-escenarios" role="radiogroup" aria-label="Escenario de práctica"></div>
+          </div>
+        </div>
+
+        <div id="campos-personalizado" class="oculto space-y-3 card-inner">
+          <div>
+            <label for="input-industria" class="block text-xs font-semibold mb-1">Industria</label>
+            <input id="input-industria" type="text" placeholder="Ej. retail, logística, seguros">
+          </div>
+          <div>
+            <label for="input-tamano" class="block text-xs font-semibold mb-1">Tamaño de la empresa</label>
+            <input id="input-tamano" type="text" placeholder="Ej. 200-500 empleados">
+          </div>
+          <div>
+            <label for="input-objecion" class="block text-xs font-semibold mb-1">Objeción principal</label>
+            <input id="input-objecion" type="text" placeholder="Ej. ya tenemos un proveedor de beneficios">
+          </div>
+        </div>
+
+        <div>
+          <span class="block text-sm font-semibold mb-2">Dificultad</span>
+          <div class="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Dificultad de la práctica">
+            <label class="dificultad-opcion">
+              <div class="flex items-center gap-2">
+                <input type="radio" name="dificultad" value="estandar" checked>
+                <span class="font-semibold text-sm">Estándar</span>
+              </div>
+            </label>
+            <label class="dificultad-opcion">
+              <div class="flex items-center gap-2">
+                <input type="radio" name="dificultad" value="avanzado">
+                <span class="font-semibold text-sm">Avanzado</span>
+              </div>
+            </label>
+          </div>
+          <p class="text-xs mt-2" style="color:var(--text-muted)">
+            Estándar: objeciones comunes y cede ante buenas respuestas. Avanzado: cuestiona el ROI con números,
+            compara con otros proveedores y no cede fácil.
+          </p>
+        </div>
+
+        <button id="btn-iniciar" class="btn btn-primary w-full py-4 text-base" aria-label="Iniciar práctica">
+          Iniciar práctica
+        </button>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- PANTALLA 2: LLAMADA EN CURSO                                   -->
+    <!-- ============================================================ -->
+    <section id="pantalla-llamada" class="pantalla card oculto text-center space-y-6">
+
+      <div>
+        <span id="indicador-hablando" class="estado-hablando" aria-live="polite">
+          <span id="punto-estado" class="punto punto-cliente punto-pulso" aria-hidden="true"></span>
+          <span id="texto-hablando">Conectando…</span>
+        </span>
+      </div>
+
+      <div class="cronometro num" id="cronometro" aria-label="Tiempo transcurrido de la llamada">00:00</div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <button id="btn-mute" class="btn btn-secondary py-3.5" aria-pressed="false" aria-label="Silenciar micrófono">
+          🎤 Silenciar
+        </button>
+        <button id="btn-terminar" class="btn btn-danger py-3.5" aria-label="Terminar práctica">
+          Terminar
+        </button>
+      </div>
+
+      <p class="text-xs" style="color:var(--text-muted)">
+        Se corta automáticamente a los <span id="minutos-max-texto">—</span> minutos.
+      </p>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- PANTALLA 3: FEEDBACK                                           -->
+    <!-- ============================================================ -->
+    <section id="pantalla-feedback" class="pantalla card oculto space-y-5">
+      <h2 class="text-lg font-bold">Resultado de la práctica</h2>
+
+      <div id="feedback-cargando" class="space-y-3 oculto">
+        <div class="skeleton h-4 w-full"></div>
+        <div class="skeleton h-4 w-full"></div>
+        <div class="skeleton h-4 w-2/3"></div>
+      </div>
+
+      <div id="feedback-contenido" class="space-y-5 oculto">
+        <div class="space-y-4" id="lista-criterios">
+          <!-- filas de criterio insertadas por JS -->
+        </div>
+
+        <div class="card-inner">
+          <p class="text-sm font-semibold mb-1">Feedback</p>
+          <p id="texto-feedback" class="text-sm" style="color:var(--text-muted)" aria-live="polite">—</p>
+        </div>
+      </div>
+
+      <button id="btn-nueva-practica" class="btn btn-secondary w-full py-3" aria-label="Volver a empezar">
+        Volver a empezar
+      </button>
+    </section>
+
+  </div>
+
+  <script>
+    // ------------------------------------------------------------------
+    // Backend (Cloud Run). Reemplazar con la URL real tras el deploy.
+    // ------------------------------------------------------------------
+    const API_BASE = 'https://entrenamiento-ventas-api-172247776994.us-central1.run.app';
+
+    function llamarApi_(ruta, datos) {
+      return fetch(API_BASE + '/' + ruta, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + sesion.accessToken
+        },
+        body: JSON.stringify(datos)
+      }).then(function (res) { return res.json(); });
+    }
+
+    // ------------------------------------------------------------------
+    // Login con Google (Google Identity Services, sin frameworks)
+    // ------------------------------------------------------------------
+    var GOOGLE_CLIENT_ID = '172247776994-3rlqkj6af8d659hgl4n4uvlmhnpk2678.apps.googleusercontent.com';
+    var ALLOWED_DOMAINS = ['apprecio.com', 'dcanje.com'];
+
+    function dominioPermitido_(email) {
+      return typeof email === 'string' && ALLOWED_DOMAINS.some(function (d) {
+        return email.toLowerCase().endsWith('@' + d);
+      });
+    }
+
+    function mostrarErrorLogin_(mensaje) {
+      var btn = document.getElementById('btn-google-login');
+      var textoBtn = document.getElementById('texto-btn-google');
+      var error = document.getElementById('error-login');
+      btn.disabled = false;
+      textoBtn.textContent = 'Continuar con Google';
+      error.textContent = mensaje;
+      error.classList.remove('oculto');
+    }
+
+    document.getElementById('btn-google-login').addEventListener('click', function () {
+      var btn = this;
+      var textoBtn = document.getElementById('texto-btn-google');
+      var error = document.getElementById('error-login');
+
+      error.classList.add('oculto');
+      btn.disabled = true;
+      textoBtn.textContent = 'Conectando…';
+
+      var clienteToken = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: 'openid email profile',
+        callback: function (resp) {
+          if (!resp || resp.error || !resp.access_token) {
+            mostrarErrorLogin_('No se pudo completar el inicio de sesión con Google.');
+            return;
+          }
+
+          fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: 'Bearer ' + resp.access_token }
+          })
+            .then(function (r) { return r.json(); })
+            .then(function (userInfo) {
+              if (!dominioPermitido_(userInfo.email)) {
+                mostrarErrorLogin_('Acceso restringido a cuentas @apprecio.com o @dcanje.com.');
+                return;
+              }
+              sesion.accessToken = resp.access_token;
+              sesion.email = userInfo.email;
+              empezarFlujo_();
+            })
+            .catch(function () {
+              mostrarErrorLogin_('No se pudo verificar tu cuenta de Google.');
+            });
+        },
+        error_callback: function () {
+          mostrarErrorLogin_('No se pudo completar el inicio de sesión con Google.');
+        }
+      });
+
+      clienteToken.requestAccessToken();
+    });
+
+    // ------------------------------------------------------------------
+    // Estado en memoria de la sesión actual
+    // ------------------------------------------------------------------
+    var sesion = {
+      email: null,
+      accessToken: null,
+      idSesion: null,
+      token: null,
+      modelo: null,
+      serviciosEsperados: '',
+      minutosMaxSesion: 20,
+      cronometroInterval: null,
+      segundos: 0,
+      transcripcion: [],
+      terminando: false
+    };
+
+    var CRITERIOS = [
+      { clave: 'descubrimiento', etiqueta: 'Descubrimiento' },
+      { clave: 'objeciones', etiqueta: 'Manejo de objeciones' },
+      { clave: 'recomendacion', etiqueta: 'Recomendación' },
+      { clave: 'cierre', etiqueta: 'Cierre' }
+    ];
+
+    function mostrarPantalla(id) {
+      ['pantalla-login', 'pantalla-seleccion', 'pantalla-llamada', 'pantalla-feedback'].forEach(function (otro) {
+        document.getElementById(otro).classList.toggle('oculto', otro !== id);
+      });
+    }
+
+    // Punto de entrada tras un login exitoso.
+    function empezarFlujo_() {
+      mostrarPantalla('pantalla-seleccion');
+      cargarInicial();
+    }
+
+    (function iniciar() {
+      mostrarPantalla('pantalla-login');
+    })();
+
+    // ------------------------------------------------------------------
+    // Carga inicial
+    // ------------------------------------------------------------------
+    function cargarInicial() {
+      llamarApi_('datos-iniciales', {})
+        .then(pintarInicial)
+        .catch(function (err) {
+          document.getElementById('cargando-inicial').classList.add('oculto');
+          var aviso = document.getElementById('aviso-cuota');
+          aviso.textContent = 'No se pudo cargar la práctica: ' + (err && err.message ? err.message : err);
+          aviso.classList.remove('oculto');
+          document.getElementById('contenido-seleccion').classList.remove('oculto');
+        });
+    }
+
+    function pintarInicial(datos) {
+      if (!datos.ok) {
+        // Respuesta de error (cuota, token rechazado por el backend, etc.)
+        document.getElementById('cargando-inicial').classList.add('oculto');
+        var aviso0 = document.getElementById('aviso-cuota');
+        aviso0.textContent = datos.motivo || 'No se pudo cargar la práctica.';
+        aviso0.classList.remove('oculto');
+        document.getElementById('contenido-seleccion').classList.remove('oculto');
+        return;
+      }
+
+      sesion.minutosMaxSesion = datos.minutosMaxSesion;
+      document.getElementById('minutos-max-texto').textContent = datos.minutosMaxSesion;
+
+      var lista = document.getElementById('lista-escenarios');
+      lista.innerHTML = '';
+
+      function crearTarjeta(id, nombreHtml, dificultadHtml, badgeHtml) {
+        var tarjeta = document.createElement('label');
+        tarjeta.className = 'escenario-tarjeta';
+        tarjeta.innerHTML =
+          '<input type="radio" name="escenario" value="' + id + '">' +
+          '<span class="escenario-nombre">' + nombreHtml + '</span>' +
+          '<span class="escenario-meta">' + dificultadHtml + badgeHtml + '</span>';
+        return tarjeta;
+      }
+
+      function barrasHtml(dificultad) {
+        var llenas = dificultad === 'avanzado' ? 3 : 2;
+        var barras = '';
+        for (var i = 0; i < 3; i++) {
+          barras += '<span' + (i < llenas ? ' class="llena"' : '') + '></span>';
+        }
+        return '<span class="barras-dificultad" title="Dificultad: ' + dificultad + '" aria-hidden="true">' + barras + '</span>';
+      }
+
+      datos.escenarios.forEach(function (e, indice) {
+        var esAgendada = e.tipoLlamada === 'agendada';
+        var badge = '<span class="badge-llamada ' + (esAgendada ? 'badge-agendada' : 'badge-frio') + '">' +
+          (esAgendada ? '📅 Agendada' : '🔥 En frío') + '</span>';
+        var tarjeta = crearTarjeta(e.id, e.nombre, barrasHtml(e.dificultad), badge);
+        if (indice === 0) tarjeta.querySelector('input').checked = true;
+        lista.appendChild(tarjeta);
+      });
+
+      var tarjetaPersonalizada = crearTarjeta('personalizado', 'Personalizado…', '', '');
+      lista.appendChild(tarjetaPersonalizada);
+
+      lista.addEventListener('change', function () {
+        var valor = lista.querySelector('input[name="escenario"]:checked').value;
+        document.getElementById('campos-personalizado').classList.toggle('oculto', valor !== 'personalizado');
+      });
+
+      var cuota = datos.cuota;
+      var btnIniciar = document.getElementById('btn-iniciar');
+      var aviso = document.getElementById('aviso-cuota');
+
+      if (cuota.ok) {
+        document.getElementById('minutos-restantes').textContent = cuota.minutosRestantes + ' min';
+        btnIniciar.disabled = false;
+      } else {
+        document.getElementById('minutos-restantes').textContent = '0 min';
+        aviso.textContent = cuota.motivo;
+        aviso.classList.remove('oculto');
+        btnIniciar.disabled = true;
+      }
+
+      document.getElementById('cargando-inicial').classList.add('oculto');
+      document.getElementById('contenido-seleccion').classList.remove('oculto');
+    }
+
+    // ------------------------------------------------------------------
+    // Iniciar práctica
+    // ------------------------------------------------------------------
+    document.getElementById('btn-iniciar').addEventListener('click', function () {
+      var btn = this;
+      var escenario = document.querySelector('input[name="escenario"]:checked').value;
+      var dificultad = document.querySelector('input[name="dificultad"]:checked').value;
+
+      var params = { escenario: escenario, dificultad: dificultad };
+      if (escenario === 'personalizado') {
+        params.industria = document.getElementById('input-industria').value;
+        params.tamano = document.getElementById('input-tamano').value;
+        params.objecion = document.getElementById('input-objecion').value;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Conectando…';
+
+      llamarApi_('iniciar-practica', params)
+        .then(function (resultado) {
+          btn.disabled = false;
+          btn.textContent = 'Iniciar práctica';
+
+          if (!resultado.ok) {
+            var aviso = document.getElementById('aviso-cuota');
+            aviso.textContent = resultado.motivo;
+            aviso.classList.remove('oculto');
+            return;
+          }
+
+          sesion.idSesion = resultado.idSesion;
+          sesion.token = resultado.token;
+          sesion.modelo = resultado.modelo;
+          sesion.serviciosEsperados = resultado.serviciosEsperados;
+
+          iniciarPantallaLlamada();
+        })
+        .catch(function (err) {
+          btn.disabled = false;
+          btn.textContent = 'Iniciar práctica';
+          var aviso = document.getElementById('aviso-cuota');
+          aviso.textContent = 'No se pudo iniciar la práctica: ' + (err && err.message ? err.message : err);
+          aviso.classList.remove('oculto');
+        });
+    });
+
+    // ------------------------------------------------------------------
+    // Pantalla de llamada — abre el WebSocket de voz (voz, ver más abajo)
+    // ------------------------------------------------------------------
+    function iniciarPantallaLlamada() {
+      mostrarPantalla('pantalla-llamada');
+      document.getElementById('texto-hablando').textContent = 'Conectando…';
+
+      sesion.transcripcion = [];
+      sesion.terminando = false;
+
+      var btnMute = document.getElementById('btn-mute');
+      btnMute.setAttribute('aria-pressed', 'false');
+      btnMute.textContent = '🎤 Silenciar';
+      btnMute.classList.remove('btn-danger');
+      btnMute.classList.add('btn-secondary');
+
+      vozIniciar({
+        token: sesion.token,
+        modelo: sesion.modelo,
+        onError: function (mensaje) {
+          // Permiso de micrófono denegado (u otro error de captura): no hay
+          // llamada posible, volvemos a la pantalla de selección.
+          if (sesion.cronometroInterval) {
+            clearInterval(sesion.cronometroInterval);
+            sesion.cronometroInterval = null;
+          }
+          mostrarPantalla('pantalla-seleccion');
+          var aviso = document.getElementById('aviso-cuota');
+          aviso.textContent = mensaje;
+          aviso.classList.remove('oculto');
+        }
+      });
+
+      sesion.segundos = 0;
+      actualizarCronometro();
+      sesion.cronometroInterval = setInterval(function () {
+        sesion.segundos++;
+        actualizarCronometro();
+        // Corte automático al llegar a minutosMaxSesion.
+        if (sesion.segundos >= sesion.minutosMaxSesion * 60) {
+          terminarLlamada();
+        }
+      }, 1000);
+    }
+
+    function actualizarCronometro() {
+      var m = Math.floor(sesion.segundos / 60);
+      var s = sesion.segundos % 60;
+      document.getElementById('cronometro').textContent =
+        String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    document.getElementById('btn-mute').addEventListener('click', function () {
+      var muteado = vozToggleMute();
+      var btn = document.getElementById('btn-mute');
+      btn.setAttribute('aria-pressed', String(muteado));
+      btn.textContent = muteado ? '🔇 Muteado' : '🎤 Silenciar';
+      btn.classList.toggle('btn-danger', muteado);
+      btn.classList.toggle('btn-secondary', !muteado);
+    });
+
+    document.getElementById('btn-terminar').addEventListener('click', terminarLlamada);
+
+    function terminarLlamada() {
+      if (sesion.terminando) return; // evita doble ejecución (botón + corte automático)
+      sesion.terminando = true;
+
+      if (sesion.cronometroInterval) {
+        clearInterval(sesion.cronometroInterval);
+        sesion.cronometroInterval = null;
+      }
+
+      vozTerminar().then(function (transcripcionOrdenada) {
+        sesion.transcripcion = transcripcionOrdenada;
+        mostrarPantalla('pantalla-feedback');
+        pintarFeedbackCargando_();
+
+        llamarApi_('evaluar-sesion', {
+          idSesion: sesion.idSesion,
+          transcripcion: sesion.transcripcion,
+          serviciosEsperados: sesion.serviciosEsperados
+        }).then(function (ev) {
+          if (!ev.ok) {
+            pintarFeedbackError_(ev.motivo || 'No se pudo evaluar la sesión.');
+            return;
+          }
+          pintarFeedback_(ev);
+        }).catch(function (err) {
+          pintarFeedbackError_('No se pudo evaluar la sesión: ' + (err && err.message ? err.message : err));
+        });
+      });
+    }
+
+    // ------------------------------------------------------------------
+    // Feedback real, generado por /evaluar-sesion a partir de la
+    // transcripción de la llamada
+    // ------------------------------------------------------------------
+    function pintarFeedbackCargando_() {
+      document.getElementById('feedback-cargando').classList.remove('oculto');
+      document.getElementById('feedback-contenido').classList.add('oculto');
+    }
+
+    function pintarFeedbackError_(mensaje) {
+      document.getElementById('feedback-cargando').classList.add('oculto');
+      document.getElementById('feedback-contenido').classList.remove('oculto');
+      document.getElementById('lista-criterios').innerHTML = '';
+      document.getElementById('texto-feedback').textContent = mensaje;
+    }
+
+    function pintarFeedback_(ev) {
+      document.getElementById('feedback-cargando').classList.add('oculto');
+      document.getElementById('feedback-contenido').classList.remove('oculto');
+
+      var contenedor = document.getElementById('lista-criterios');
+      contenedor.innerHTML = '';
+
+      CRITERIOS.forEach(function (c) {
+        var score = Number(ev[c.clave]) || 0;
+        var fila = document.createElement('div');
+        fila.innerHTML =
+          '<div class="flex items-center justify-between mb-1">' +
+            '<span class="text-sm font-medium">' + c.etiqueta + '</span>' +
+            '<span class="text-sm font-bold num">' + score + ' / 5</span>' +
+          '</div>' +
+          '<div class="criterio-barra"><span style="width:' + (score / 5 * 100) + '%"></span></div>';
+        contenedor.appendChild(fila);
+      });
+
+      document.getElementById('texto-feedback').textContent = ev.feedback || '—';
+    }
+
+    document.getElementById('btn-nueva-practica').addEventListener('click', function () {
+      mostrarPantalla('pantalla-seleccion');
+      document.getElementById('aviso-cuota').classList.add('oculto');
+      document.getElementById('cargando-inicial').classList.remove('oculto');
+      document.getElementById('contenido-seleccion').classList.add('oculto');
+      cargarInicial();
+    });
+  </script>
+
+  <script>
+    // ====================================================================
+    // Cliente de la Gemini Live API — capturado tal cual del Voz.html
+    // original (Apps Script), sin cambios de lógica de audio/WebSocket.
+    //
+    // Expone dos funciones globales que el script principal usa desde
+    // iniciarPantallaLlamada() / terminarLlamada():
+    //   - vozIniciar({ token, modelo, onError })
+    //   - vozTerminar()  -> Promise<Array<{rol, texto, t}>> (ordenada por t)
+    //
+    // Todo lo demás es estado privado en el objeto `voz`.
+    // ====================================================================
+
+    // El método tiene que ser "Constrained": nuestro token efímero se creó con
+    // bidiGenerateContentSetup (system instruction + config fijados server-side), y el método
+    // genérico BidiGenerateContent lo rechaza con 1008 "unregistered callers" aunque el token sea
+    // válido — verificado contra la API real, no es un typo.
+    var WS_BASE = 'wss://generativelanguage.googleapis.com/ws/' +
+      'google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained';
+
+    // Umbral de RMS (0-1) por encima del cual consideramos que el ejecutivo
+    // está hablando. Se limpia solo (debounce) si no hay audio fuerte por 600ms.
+    var UMBRAL_VOZ_EJECUTIVO = 0.02;
+    var DEBOUNCE_EJECUTIVO_MS = 600;
+
+    var CAPTURA_WORKLET_SRC = [
+      'class CapturaProcesador extends AudioWorkletProcessor {',
+      '  constructor() {',
+      '    super();',
+      '    this.buffer = [];',
+      '    this.CHUNK = 3200;', // ~200ms a 16kHz
+      '  }',
+      '  process(inputs) {',
+      '    var input = inputs[0];',
+      '    if (input && input[0]) {',
+      '      var canal = input[0];',
+      '      for (var i = 0; i < canal.length; i++) this.buffer.push(canal[i]);',
+      '      while (this.buffer.length >= this.CHUNK) {',
+      '        var trozo = this.buffer.splice(0, this.CHUNK);',
+      '        var int16 = new Int16Array(trozo.length);',
+      '        var suma = 0;',
+      '        for (var j = 0; j < trozo.length; j++) {',
+      '          var s = Math.max(-1, Math.min(1, trozo[j]));',
+      '          int16[j] = s < 0 ? s * 0x8000 : s * 0x7fff;',
+      '          suma += Math.abs(s);',
+      '        }',
+      '        this.port.postMessage({ pcm: int16.buffer, rms: suma / trozo.length }, [int16.buffer]);',
+      '      }',
+      '    }',
+      '    return true;',
+      '  }',
+      '}',
+      'registerProcessor("captura-procesador", CapturaProcesador);'
+    ].join('\n');
+
+    var voz = {
+      ws: null,
+      token: null,
+      modelo: null,
+      onError: null,
+
+      ctxIn: null,
+      micStream: null,
+      workletNode: null,
+      conectado: false,          // true tras recibir setupComplete
+      bufferPendiente: [],       // chunks base64 esperando setupComplete
+
+      ctxOut: null,
+      proximoInicio: 0,
+      fuentesActivas: [],
+
+      ultimoHandle: null,
+      cerrandoIntencional: false,
+
+      ejecutivoHablando: false,
+      clienteHablando: false,
+      timeoutEjecutivo: null,
+
+      muteado: false
+    };
+
+    // Silenciar no cierra ni pausa el WebSocket: solo deja de mandar audio del mic.
+    // La sesión de voz sigue viva (el cliente simulado puede seguir hablando si ya
+    // estaba en medio de una respuesta).
+    function vozToggleMute() {
+      voz.muteado = !voz.muteado;
+      if (voz.muteado) {
+        voz.ejecutivoHablando = false;
+        actualizarIndicador_();
+      }
+      return voz.muteado;
+    }
+
+    // ------------------------------------------------------------------
+    // Utilidades base64 <-> PCM16
+    // ------------------------------------------------------------------
+    function int16BufferABase64_(arrayBuffer) {
+      var bytes = new Uint8Array(arrayBuffer);
+      var binario = '';
+      var CHUNK = 0x8000;
+      for (var i = 0; i < bytes.length; i += CHUNK) {
+        binario += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+      }
+      return btoa(binario);
+    }
+
+    function base64AInt16_(b64) {
+      var binario = atob(b64);
+      var bytes = new Uint8Array(binario.length);
+      for (var i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i);
+      return new Int16Array(bytes.buffer);
+    }
+
+    // ------------------------------------------------------------------
+    // Indicador visual (quién está hablando)
+    // ------------------------------------------------------------------
+    function actualizarIndicador_() {
+      var punto = document.getElementById('punto-estado');
+      var texto = document.getElementById('texto-hablando');
+      if (!punto || !texto) return;
+
+      punto.classList.remove('punto-cliente', 'punto-ejecutivo');
+      if (voz.ejecutivoHablando) {
+        punto.classList.add('punto-ejecutivo');
+        punto.classList.add('punto-pulso');
+        texto.textContent = 'Estás hablando';
+      } else if (voz.clienteHablando) {
+        punto.classList.add('punto-cliente');
+        punto.classList.add('punto-pulso');
+        texto.textContent = 'Cliente hablando';
+      } else {
+        punto.classList.add('punto-cliente');
+        punto.classList.remove('punto-pulso');
+        texto.textContent = 'Escuchando…';
+      }
+    }
+
+    function marcarEjecutivoHablando_(rms) {
+      if (rms > UMBRAL_VOZ_EJECUTIVO) {
+        voz.ejecutivoHablando = true;
+        actualizarIndicador_();
+        if (voz.timeoutEjecutivo) clearTimeout(voz.timeoutEjecutivo);
+        voz.timeoutEjecutivo = setTimeout(function () {
+          voz.ejecutivoHablando = false;
+          actualizarIndicador_();
+        }, DEBOUNCE_EJECUTIVO_MS);
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Captura de micrófono (AudioWorklet, 16kHz, PCM16 mono)
+    // ------------------------------------------------------------------
+    function iniciarCaptura_() {
+      return navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } })
+        .then(function (stream) {
+          voz.micStream = stream;
+          voz.ctxIn = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+
+          var blobUrl = URL.createObjectURL(new Blob([CAPTURA_WORKLET_SRC], { type: 'application/javascript' }));
+          return voz.ctxIn.audioWorklet.addModule(blobUrl).then(function () {
+            if (voz.ctxIn.state === 'suspended') voz.ctxIn.resume();
+
+            var fuente = voz.ctxIn.createMediaStreamSource(stream);
+            voz.workletNode = new AudioWorkletNode(voz.ctxIn, 'captura-procesador');
+            voz.workletNode.port.onmessage = function (evento) {
+              if (voz.muteado) return; // ni marcamos "hablando" ni mandamos audio
+              marcarEjecutivoHablando_(evento.data.rms);
+              var b64 = int16BufferABase64_(evento.data.pcm);
+              enviarAudio_(b64);
+            };
+            fuente.connect(voz.workletNode);
+            // No conectamos el workletNode a destination: no queremos escuchar
+            // nuestro propio micrófono de vuelta.
+          });
+        });
+    }
+
+    function enviarAudio_(b64) {
+      var mensaje = {
+        realtimeInput: { audio: { data: b64, mimeType: 'audio/pcm;rate=16000' } }
+      };
+      if (!voz.conectado) {
+        voz.bufferPendiente.push(mensaje);
+        return;
+      }
+      if (voz.ws && voz.ws.readyState === WebSocket.OPEN) {
+        voz.ws.send(JSON.stringify(mensaje));
+      }
+    }
+
+    function vaciarBufferPendiente_() {
+      voz.bufferPendiente.forEach(function (mensaje) {
+        if (voz.ws && voz.ws.readyState === WebSocket.OPEN) {
+          voz.ws.send(JSON.stringify(mensaje));
+        }
+      });
+      voz.bufferPendiente = [];
+    }
+
+    // ------------------------------------------------------------------
+    // Reproducción de audio del cliente simulado (24kHz, encolado)
+    // ------------------------------------------------------------------
+    function asegurarCtxSalida_() {
+      if (!voz.ctxOut) {
+        voz.ctxOut = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+        voz.proximoInicio = 0;
+      }
+      if (voz.ctxOut.state === 'suspended') voz.ctxOut.resume();
+    }
+
+    function encolarAudioSalida_(b64) {
+      asegurarCtxSalida_();
+      var int16 = base64AInt16_(b64);
+      var float32 = new Float32Array(int16.length);
+      for (var i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768;
+
+      var buffer = voz.ctxOut.createBuffer(1, float32.length, 24000);
+      buffer.copyToChannel(float32, 0);
+
+      var src = voz.ctxOut.createBufferSource();
+      src.buffer = buffer;
+      src.connect(voz.ctxOut.destination);
+
+      var inicio = Math.max(voz.ctxOut.currentTime, voz.proximoInicio);
+      src.start(inicio);
+      voz.proximoInicio = inicio + buffer.duration;
+
+      voz.fuentesActivas.push(src);
+      src.onended = function () {
+        var idx = voz.fuentesActivas.indexOf(src);
+        if (idx >= 0) voz.fuentesActivas.splice(idx, 1);
+      };
+
+      voz.clienteHablando = true;
+      actualizarIndicador_();
+    }
+
+    function vaciarColaSalida_() {
+      voz.fuentesActivas.forEach(function (src) {
+        try { src.stop(); } catch (e) { /* ya pudo haber terminado */ }
+      });
+      voz.fuentesActivas = [];
+      if (voz.ctxOut) voz.proximoInicio = voz.ctxOut.currentTime;
+      voz.clienteHablando = false;
+      actualizarIndicador_();
+    }
+
+    // ------------------------------------------------------------------
+    // Transcripción
+    // ------------------------------------------------------------------
+    function acumularTranscripcion_(rol, texto) {
+      if (!texto) return;
+      if (!sesion.transcripcion) sesion.transcripcion = [];
+      sesion.transcripcion.push({ rol: rol, texto: texto, t: Date.now() });
+    }
+
+    // ------------------------------------------------------------------
+    // WebSocket: apertura, mensajes, reconexión
+    // ------------------------------------------------------------------
+    function abrirWebSocket_(handleResumption) {
+      voz.conectado = false;
+      var ws = new WebSocket(WS_BASE + '?access_token=' + encodeURIComponent(voz.token));
+      voz.ws = ws;
+
+      ws.addEventListener('open', function () {
+        var setup = { model: 'models/' + voz.modelo };
+        if (handleResumption) setup.sessionResumption = { handle: handleResumption };
+        ws.send(JSON.stringify({ setup: setup }));
+      });
+
+      ws.addEventListener('message', function (evento) {
+        if (evento.data instanceof Blob) {
+          evento.data.text().then(function (texto) { procesarMensaje_(JSON.parse(texto)); });
+        } else {
+          procesarMensaje_(JSON.parse(evento.data));
+        }
+      });
+
+      ws.addEventListener('error', function (e) {
+        console.error('Voz: error de WebSocket', e);
+      });
+
+      ws.addEventListener('close', function (e) {
+        if (voz.cerrandoIntencional) return;
+        console.warn('Voz: WebSocket cerrado inesperadamente', e.code, e.reason);
+        // No reintentamos automáticamente salvo goAway (manejado en procesarMensaje_).
+        // Un cierre inesperado deja de recibir/enviar audio, pero la transcripción
+        // acumulada hasta ese punto se conserva para terminarLlamada().
+      });
+    }
+
+    function procesarMensaje_(msg) {
+      if (msg.setupComplete) {
+        voz.conectado = true;
+        vaciarBufferPendiente_();
+        actualizarIndicador_();
+        return;
+      }
+
+      if (msg.goAway) {
+        console.warn('Voz: goAway recibido, reconectando con sessionResumption', voz.ultimoHandle);
+        voz.cerrandoIntencional = true;
+        try { voz.ws.close(); } catch (e) { /* noop */ }
+        voz.cerrandoIntencional = false;
+        abrirWebSocket_(voz.ultimoHandle);
+        return;
+      }
+
+      if (msg.sessionResumptionUpdate) {
+        var upd = msg.sessionResumptionUpdate;
+        if (upd.resumable && upd.newHandle) voz.ultimoHandle = upd.newHandle;
+      }
+
+      // El cliente simulado "cuelga": el prompt le pide llamar a esta función (en vez de decirlo
+      // solo de palabra) cuando el ejecutivo se despide o la conversación llegó a un cierre
+      // natural. Verificado contra la API real que la invoca sin decirla en voz alta.
+      if (msg.toolCall && msg.toolCall.functionCalls) {
+        var llamadaFinalizar = msg.toolCall.functionCalls.find(function (fc) { return fc.name === 'finalizar_llamada'; });
+        if (llamadaFinalizar) {
+          try {
+            voz.ws.send(JSON.stringify({
+              toolResponse: { functionResponses: [{ id: llamadaFinalizar.id, name: 'finalizar_llamada', response: {} }] },
+            }));
+          } catch (e) { /* noop, igual vamos a cerrar */ }
+          if (typeof terminarLlamada === 'function') terminarLlamada();
+          return;
+        }
+      }
+
+      if (msg.serverContent) {
+        var sc = msg.serverContent;
+
+        if (sc.interrupted) {
+          vaciarColaSalida_();
+        }
+
+        if (sc.inputTranscription && sc.inputTranscription.text) {
+          acumularTranscripcion_('ejecutivo', sc.inputTranscription.text);
+        }
+        if (sc.outputTranscription && sc.outputTranscription.text) {
+          acumularTranscripcion_('cliente', sc.outputTranscription.text);
+        }
+        // sc.interimInputTranscription se ignora a propósito: se actualiza
+        // constantemente con texto parcial y duplicaría la transcripción final.
+
+        if (sc.modelTurn && sc.modelTurn.parts) {
+          sc.modelTurn.parts.forEach(function (parte) {
+            if (parte.inlineData && parte.inlineData.data) {
+              encolarAudioSalida_(parte.inlineData.data);
+            }
+          });
+        }
+
+        if (sc.turnComplete) {
+          voz.clienteHablando = false;
+          actualizarIndicador_();
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // API pública
+    // ------------------------------------------------------------------
+    function vozIniciar(opts) {
+      voz.token = opts.token;
+      voz.modelo = opts.modelo;
+      voz.onError = opts.onError;
+      voz.ultimoHandle = null;
+      voz.cerrandoIntencional = false;
+      voz.bufferPendiente = [];
+      voz.ejecutivoHablando = false;
+      voz.clienteHablando = false;
+      voz.muteado = false;
+
+      iniciarCaptura_()
+        .then(function () {
+          abrirWebSocket_(null);
+        })
+        .catch(function (err) {
+          console.error('Voz: permiso de micrófono denegado o error de captura', err);
+          if (voz.onError) {
+            voz.onError('No se pudo acceder al micrófono. Revisá los permisos del navegador para este sitio e intentá de nuevo.');
+          }
+        });
+    }
+
+    function vozTerminar() {
+      voz.cerrandoIntencional = true;
+
+      if (voz.ws) {
+        try { voz.ws.close(1000, 'fin de práctica'); } catch (e) { /* noop */ }
+        voz.ws = null;
+      }
+      if (voz.workletNode) {
+        try { voz.workletNode.disconnect(); } catch (e) { /* noop */ }
+        voz.workletNode = null;
+      }
+      if (voz.micStream) {
+        voz.micStream.getTracks().forEach(function (t) { t.stop(); });
+        voz.micStream = null;
+      }
+      vaciarColaSalida_();
+      if (voz.ctxIn) { try { voz.ctxIn.close(); } catch (e) { /* noop */ } voz.ctxIn = null; }
+      if (voz.ctxOut) { try { voz.ctxOut.close(); } catch (e) { /* noop */ } voz.ctxOut = null; }
+      if (voz.timeoutEjecutivo) { clearTimeout(voz.timeoutEjecutivo); voz.timeoutEjecutivo = null; }
+
+      var transcripcionOrdenada = (sesion.transcripcion || []).slice().sort(function (a, b) { return a.t - b.t; });
+      sesion.transcripcion = transcripcionOrdenada;
+
+      return Promise.resolve(transcripcionOrdenada);
+    }
+  </script>
+</body>
+</html>
